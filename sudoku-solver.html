@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Page Title</title>
+    <style>
+        input {
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            border: solid 1px;
+            text-align: center;
+            transition: background-color .3s linear;
+        }
+    </style>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel='stylesheet' type='text/css' media='screen' href='main.css'>
+</head>
+
+<body>
+    <table>
+        <tbody id='sudoku'></tbody>
+    </table>
+</body>
+<button onclick="solveSudokuMain()">
+    Calculate
+</button>
+<script>
+    function initializeSudoku() {
+        const sudokuTiles = []
+        for (let i = 1; i <= 9; i++) {
+            sudokuTiles.push(new Array(9))
+        }
+        return sudokuTiles
+    }
+    var sudokuTiles = initializeSudoku()
+
+    function isEmpty(x, y, val) {
+        return sudokuTiles[x][y] == undefined
+    }
+    function findEmpty() {
+        for (let x = 0; x < sudokuTiles.length; x++) {
+            for (let y = 0; y < sudokuTiles[x].length; y++) {
+                if (sudokuTiles[x][y] == undefined)
+                    return { x, y, status: true }
+            }
+        }
+        return { x: undefined, y: undefined, status: false }
+    }
+    function findDuplicate(xParam, yParam, val) {
+        for (let x = 0; x < sudokuTiles.length; x++) {
+            for (let y = 0; y < sudokuTiles[x].length; y++) {
+                if (x != xParam && yParam != y) {
+                    sudokuTiles[xParam][yParam] = undefined
+                    return true
+                }
+            }
+        }
+        return false
+    }
+    function usedInX(x, val) {
+        for (let y = 0; y < sudokuTiles.length; y++) {
+            if (sudokuTiles[x][y] == val) {
+                return true
+            }
+        }
+        return false
+    }
+
+    function usedInY(y, val) {
+        for (let x = 0; x < sudokuTiles.length; x++) {
+            if (sudokuTiles[x][y] == val) {
+                return true
+            }
+        }
+        return false
+    }
+
+    function usedInBox(x, y, val) {
+        sqrtLength = Math.sqrt(sudokuTiles.length)
+        startX = x - (x % sqrtLength)
+        startY = y - (y % sqrtLength)
+        endX = startX + sqrtLength
+        endY = startY + sqrtLength
+        for (let xBox = startX; xBox < endX; xBox++) {
+            for (let yBox = startY; yBox < endY; yBox++) {
+                if (sudokuTiles[xBox][yBox] == val) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    async function solveSudokuMain() {
+        if (!await solveSudoku()) {
+        }
+    }
+    async function solveSudoku() {
+        var { x, y, status } = findEmpty()
+        if (!status) {
+            console.log('FIN')
+            return true
+        }
+
+        for (let val = 1; val <= 9; val++) {
+            await sleep(1)
+            document.getElementById(`${x}-${y}`).style.background = 'transparent'
+            document.getElementById(`td-${x}-${y}`).style.color = 'white'
+            if (!usedInBox(x, y, val) && !usedInY(y, val) && !usedInX(x, val) && isEmpty(x, y, val)) {
+                document.getElementById(`${x}-${y}`).value = val
+                document.getElementById(`td-${x}-${y}`).style.background = 'green'
+                sudokuTiles[x][y] = val
+                if (await solveSudoku())
+                    return true
+            } else {
+                document.getElementById(`${x}-${y}`).value = ''
+                document.getElementById(`td-${x}-${y}`).style.background = 'red'
+                sudokuTiles[x][y] = undefined
+            }
+        }
+        console.log('Not solveable')
+        return false
+
+    }
+
+    function updateSudokuTiles(x, y, e) {
+        const regex = /^[0-9]{1,1}$/gm;
+        if (regex.exec(e.value) != null) {
+            sudokuTiles[x][y] = e.value
+        } else {
+            sudokuTiles[x][y] = undefined
+        }
+    }
+    function loadSudoku(refresh = false) {
+        if (refresh) document.getElementById('sudoku').innerHTML = ''
+        for (let x = 0; x < sudokuTiles.length; x++) {
+            const col = sudokuTiles[x];
+            tr = `<tr>`
+            for (let y = 0; y < col.length; y++) {
+                const row = col[y];
+                tr += `<td id='td-${x}-${y}'><input type='text' oninput=updateSudokuTiles(${x},${y},this) maxlength=1 id='${x}-${y}' value='${sudokuTiles[x][y] || ''}'></td>`
+            }
+            tr += `</tr>`
+            document.getElementById('sudoku').insertAdjacentHTML('beforeend', tr)
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        loadSudoku()
+    });
+</script>
+
+</html>
