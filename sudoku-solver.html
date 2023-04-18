@@ -20,46 +20,35 @@
 </head>
 
 <body>
-    <table>
-        <tbody id='sudoku'></tbody>
-    </table>
+<table>
+    <tbody id='sudoku'></tbody>
+</table>
 </body>
 <button onclick="solveSudokuMain()">
     Calculate
 </button>
 <script>
-    function initializeSudoku() {
-        const sudokuTiles = []
-        for (let i = 1; i <= 9; i++) {
-            sudokuTiles.push(new Array(9))
-        }
+    async function initializeSudoku() {
+        var response = await fetch("https://sudoku-api.vercel.app/api/dosuku?query={newboard(limit:1){grids{value}}}")
+        var resultJson = await response.json()
+        const sudokuTiles = resultJson.newboard.grids[0].value
         return sudokuTiles
     }
-    var sudokuTiles = initializeSudoku()
 
     function isEmpty(x, y, val) {
-        return sudokuTiles[x][y] == undefined
+        return sudokuTiles[x][y] == 0
     }
+
     function findEmpty() {
         for (let x = 0; x < sudokuTiles.length; x++) {
             for (let y = 0; y < sudokuTiles[x].length; y++) {
-                if (sudokuTiles[x][y] == undefined)
-                    return { x, y, status: true }
+                if (sudokuTiles[x][y] == 0)
+                    return {x, y}
             }
         }
-        return { x: undefined, y: undefined, status: false }
+        return {x: null, y: null}
     }
-    function findDuplicate(xParam, yParam, val) {
-        for (let x = 0; x < sudokuTiles.length; x++) {
-            for (let y = 0; y < sudokuTiles[x].length; y++) {
-                if (x != xParam && yParam != y) {
-                    sudokuTiles[xParam][yParam] = undefined
-                    return true
-                }
-            }
-        }
-        return false
-    }
+
     function usedInX(x, val) {
         for (let y = 0; y < sudokuTiles.length; y++) {
             if (sudokuTiles[x][y] == val) {
@@ -93,22 +82,24 @@
         }
         return false
     }
+
     function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
+
     async function solveSudokuMain() {
         if (!await solveSudoku()) {
         }
     }
+
     async function solveSudoku() {
-        var { x, y, status } = findEmpty()
-        if (!status) {
+        var {x, y} = findEmpty()
+        if (x == null && y == null) {
             console.log('FIN')
             return true
         }
-
         for (let val = 1; val <= 9; val++) {
-            await sleep(1)
+            // await sleep(1)
             document.getElementById(`${x}-${y}`).style.background = 'transparent'
             document.getElementById(`td-${x}-${y}`).style.color = 'white'
             if (!usedInBox(x, y, val) && !usedInY(y, val) && !usedInX(x, val) && isEmpty(x, y, val)) {
@@ -120,29 +111,28 @@
             } else {
                 document.getElementById(`${x}-${y}`).value = ''
                 document.getElementById(`td-${x}-${y}`).style.background = 'red'
-                sudokuTiles[x][y] = undefined
+                sudokuTiles[x][y] = 0
             }
-        }
-        console.log('Not solveable')
-        return false
 
+        }
+        return false
     }
 
     function updateSudokuTiles(x, y, e) {
         const regex = /^[0-9]{1,1}$/gm;
         if (regex.exec(e.value) != null) {
-            sudokuTiles[x][y] = e.value
+            sudokuTiles[x][y] = parseInt(e.value)
         } else {
-            sudokuTiles[x][y] = undefined
+            sudokuTiles[x][y] = 0
         }
     }
+
     function loadSudoku(refresh = false) {
         if (refresh) document.getElementById('sudoku').innerHTML = ''
         for (let x = 0; x < sudokuTiles.length; x++) {
             const col = sudokuTiles[x];
             tr = `<tr>`
             for (let y = 0; y < col.length; y++) {
-                const row = col[y];
                 tr += `<td id='td-${x}-${y}'><input type='text' oninput=updateSudokuTiles(${x},${y},this) maxlength=1 id='${x}-${y}' value='${sudokuTiles[x][y] || ''}'></td>`
             }
             tr += `</tr>`
@@ -150,7 +140,8 @@
         }
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", async function () {
+        sudokuTiles = await initializeSudoku()
         loadSudoku()
     });
 </script>
