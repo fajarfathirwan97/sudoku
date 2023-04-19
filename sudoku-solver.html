@@ -99,7 +99,7 @@
             return true
         }
         for (let val = 1; val <= 9; val++) {
-            // await sleep(1)
+            await sleep(1)
             document.getElementById(`${x}-${y}`).style.background = 'transparent'
             document.getElementById(`td-${x}-${y}`).style.color = 'white'
             if (!usedInBox(x, y, val) && !usedInY(y, val) && !usedInX(x, val) && isEmpty(x, y, val)) {
